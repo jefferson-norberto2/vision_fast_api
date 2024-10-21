@@ -1,7 +1,6 @@
+import requests
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
-
-from pathlib import Path
 from api.packages.pb.packages_dispensation import Image
 from api.utils.connection_manager import ConnectionManager
 from api.utils.camera import Camera
@@ -13,13 +12,18 @@ class ImageAPI(FastAPI):
         self.camera = Camera()
         self.image_proto = Image()
 
-        self.add_api_route('/', self.home, methods=["GET"])
+        self.add_api_route('/classify-frame', self.classify_frame, methods=["GET"])
         self.add_api_websocket_route("/ws/camera", self.websocket_endpoint)
+    
+    async def classify_frame(self):
+        url = "http://127.0.0.1:101101/classify-image"
+    
+        response = requests.put(url, data=bytes(self.image_proto))
         
-    async def home(self):
-        html_file_path = Path("pages/home.html")
-        html_content = html_file_path.read_text(encoding="utf-8")
-        return HTMLResponse(html_content)
+        if response.status_code == 200:
+            return response
+        else:
+            return HTMLResponse(status_code=500)
 
     async def websocket_endpoint(
         self,
