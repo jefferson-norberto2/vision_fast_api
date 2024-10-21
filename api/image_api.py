@@ -2,6 +2,7 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
 
 from pathlib import Path
+from api.packages.pb.packages_dispensation import Image
 from api.utils.connection_manager import ConnectionManager
 from api.utils.camera import Camera
 
@@ -9,7 +10,8 @@ class ImageAPI(FastAPI):
     def __init__(self, title: str = "CustomAPI") -> None:
         super().__init__(title=title)
         self.manager = ConnectionManager() 
-        self.cam = Camera()
+        self.camera = Camera()
+        self.image_proto = Image()
 
         self.add_api_route('/', self.home, methods=["GET"])
         self.add_api_websocket_route("/ws/camera", self.websocket_endpoint)
@@ -37,17 +39,18 @@ class ImageAPI(FastAPI):
         websocket: WebSocket,
     ):
         await self.manager.connect(websocket)
-        self.cam.set_camera(0)
+        self.camera.set_camera(0)
 
         try:
             while True:
-                ret, frame = self.cam.get_frame()
+                ret, frame = self.camera.get_frame()
                 if not ret:
                     break
-                frame_data = self.cam.encode_image(frame)
-                await websocket.send_text(frame_data)
+                self.image_proto.frame = self.camera.encode_image(frame)
+
+                await websocket.send_text(bytes(self.image_proto))
 
         except WebSocketDisconnect:
             self.manager.disconnect(websocket)
         finally:
-            self.cam.release_cam()
+            self.camera.release_cam()

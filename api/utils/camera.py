@@ -5,7 +5,7 @@ class Camera:
     def __init__(self) -> None:
         self.cap = None
     
-    def set_camera(self, cod: int):
+    def set_camera(self, cod: int | str):
         self.cap = VideoCapture(cod)
     
     def get_frame(self):
