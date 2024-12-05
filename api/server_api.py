@@ -4,6 +4,8 @@ from fastapi.responses import HTMLResponse
 from api.packages.pb.packages_common import Instrumental, Kit, KitList, InstrumentalList
 from api.packages.pb.packages_inspection import Bbox, Classification, Image, Table, TableList
 from api.utils.camera import Camera
+from api.utils.onnx_opencv import detect
+import yaml
 
 class ServerAPI(FastAPI):
     def __init__(self, title: str = "CustomAPI") -> None:
@@ -49,30 +51,37 @@ class ServerAPI(FastAPI):
         kit_id = int(kit_id)
 
         if kit_id == 12:
-            instrumental_list.unavailable_instrumental.append(Instrumental(id=1, name='Hook em L'))
-            instrumental_list.unavailable_instrumental.append(Instrumental(id=2, name='Debakey'))
-            instrumental_list.unavailable_instrumental.append(Instrumental(id=3, name='Grasper'))
-            instrumental_list.unavailable_instrumental.append(Instrumental(id=4, name='Porta agulha'))
+            instrumental_list.unavailable_instrumental.append(Instrumental(id=0, name='Meryland'))
+            instrumental_list.unavailable_instrumental.append(Instrumental(id=1, name='Aspirador 5mm'))
+            instrumental_list.unavailable_instrumental.append(Instrumental(id=2, name='Hook em L'))
+            instrumental_list.unavailable_instrumental.append(Instrumental(id=3, name='Debakey'))
+            instrumental_list.unavailable_instrumental.append(Instrumental(id=4, name='Grasper'))
             instrumental_list.unavailable_instrumental.append(Instrumental(id=5, name='Clamp'))
-            instrumental_list.unavailable_instrumental.append(Instrumental(id=6, name='Aspirador 5mm'))
-            instrumental_list.unavailable_instrumental.append(Instrumental(id=7, name='Meryland'))
         
         return HTMLResponse(content=bytes(instrumental_list), status_code=200)
     
     async def classify_frame(self, request: Request):
         data = await request.body()
         image_proto = Image().parse(data)
-
         image = self.camera.decode_image(image_proto.frame)
-        print(image.shape)
 
-        
-        
-        inst = Instrumental(id=1, name='Hook em L')
-        bbox = Bbox(heigh=0.1, width=0.1, x_min=0.1, y_min=0.1)
-        classify = Classification(instrumental=inst, bbox=bbox, degree_confidence=0.9)
+        with open('./assets/tools.yaml', 'r') as file:
+            dict_yaml = yaml.safe_load(file)
+        classes = dict_yaml["names"]
 
-        return HTMLResponse(content=bytes(classify), status_code=200)
+        results = detect('./assets/best.onnx', image, classes, 0.5)
+        
+
+        if len(results) > 0:
+            result = results[0]
+            inst = Instrumental(id=result['class_id'], name=result['class_name'])
+            bbox = Bbox( x_min=result['bbox_n'][0], y_min=result['bbox_n'][1], width=result['bbox_n'][2], heigh=result['bbox_n'][3])
+            classify = Classification(instrumental=inst, bbox=bbox, degree_confidence=result['confidence'])
+
+            return HTMLResponse(content=bytes(classify), status_code=200)
+        else:
+            return HTMLResponse(status_code=500)
+            
         
         # if response.status_code == 200:
         #     return response
