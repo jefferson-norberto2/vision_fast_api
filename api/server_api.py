@@ -15,7 +15,7 @@ class ServerAPI(FastAPI):
         self.add_api_route('/classify-frame', self.classify_frame, methods=["POST"])
         self.add_api_route('/inspection/workbench-list', self.workbench_list, methods=["GET"])
         self.add_api_route('/inspection/kit-list/{workbench_id}', self.kit_list, methods=["GET"])
-        self.add_api_route('/inspection/tool-list/{kit_id}', self.tool_list, methods=["GET"])
+        self.add_api_route('/inspection/instrument-list/{kit_id}', self.tool_list, methods=["GET"])
 
     async def workbench_list(self):
         table_list = WorkbenchList(workbenches=[])
