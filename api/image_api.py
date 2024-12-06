@@ -3,7 +3,7 @@ import time
 import requests
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
-from api.packages.pb.packages_inspection import Image
+from api.packages.pb.packages_cme import Image
 from api.utils.connection_manager import ConnectionManager
 from api.utils.camera import Camera
 from threading import Thread

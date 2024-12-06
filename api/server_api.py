@@ -1,8 +1,7 @@
 
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
-from api.packages.pb.packages_common import Instrumental, Kit, KitList, InstrumentalList
-from api.packages.pb.packages_inspection import Bbox, Classification, Image, Table, TableList
+from api.packages.pb.packages_cme import Instrumental, Kit, KitList, InstrumentalList, Bbox, Classification, Image, Workbench, WorkbenchList
 from api.utils.camera import Camera
 from api.utils.onnx_opencv import detect
 import yaml
@@ -19,10 +18,10 @@ class ServerAPI(FastAPI):
         self.add_api_route('/inspection/tool-list/{kit_id}', self.tool_list, methods=["GET"])
 
     async def workbench_list(self):
-        table_list = TableList(tables=[])
+        table_list = WorkbenchList(workbenches=[])
         
         for i in range(5):
-            table_list.tables.append(Table(id=i+1, name=f'Mesa {i+1}'))
+            table_list.workbenches.append(Workbench(id=i+1, name=f'Mesa {i+1}'))
 
         return HTMLResponse(content=bytes(table_list), status_code=200)
 
